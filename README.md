@@ -8,7 +8,7 @@ Allegro PCB Editor SKILL 工具箱，基于 Cadence SPB 17.4 / 24.1 开发。
 - **Layout**：布局工具（按页摆放、聚拢、对齐、等距、格点、镜像等）
 - **Routing**：布线工具（切线截铜、过孔替换、线宽调整、差分、挖空、打孔等）
 - **Text/Silk**：字符丝印工具（字体设置、REF 调整、中文、LOGO 等）
-- **Manufacturing**：工艺制造工具（Gerber、PDF、DXF/3D、坐标、拼板、阻抗等）
+- **Manufacturing   制造业**：工艺制造工具（Gerber、PDF、DXF/3D、坐标、拼板、阻抗等）
 - **Utilities**：辅助工具（单位换算、库路径、颜色、快捷键、刷色、换层等）
 
 ## 安装与加载
@@ -17,10 +17,10 @@ Allegro PCB Editor SKILL 工具箱，基于 Cadence SPB 17.4 / 24.1 开发。
 
 将 `allegro_skill_toolbox/allegro.ilinit` 的内容添加到你的 Allegro 启动目录下的 `allegro.ilinit` 中：
 
-```skill
-ASTB_INSTALL_DIR = "D:/Cadence/MFLXskill"
-setSkillPath(cons(ASTB_INSTALL_DIR getSkillPath()))
-load(strcat(ASTB_INSTALL_DIR "/allegro_skill_toolbox/main.il"))
+```skill   “的技能
+ASTB_INSTALL_DIR = "D:/Cadence/MFLXskill"ASTB_INSTALL_DIR = “ D:/Cadence/MFLXskill ”
+setSkillPath(cons(ASTB_INSTALL_DIR getSkillPath()))setSkillPath(缺点(ASTB_INSTALL_DIR getSkillPath ()))
+load(strcat(ASTB_INSTALL_DIR "/allegro_skill_toolbox/main.il"))负载(strcat (ASTB_INSTALL_DIR“/ allegro_skill_toolbox / main.il"))
 ```
 
 ### 方法 2：手动加载
@@ -30,10 +30,10 @@ load(strcat(ASTB_INSTALL_DIR "/allegro_skill_toolbox/main.il"))
 ```skill
 load("D:/Cadence/MFLXskill/allegro_skill_toolbox/main.il")
 ```
-
+ASTB_init
 ## 使用
 
-加载成功后，Allegro 菜单栏会出现 **allegro_skill_toolbox** 菜单。
+加载成功后，Allegro 菜单栏会出现 输入命令ASTB_init**allegro_skill_toolbox** 菜单。
 
 常用系统命令：
 
