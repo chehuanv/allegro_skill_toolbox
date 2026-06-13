@@ -1,0 +1,22 @@
+;; ============================================================
+;; File: allegro_skill_toolbox/allegro.ilinit
+;; Purpose: Auto-load entry for allegro_skill_toolbox
+;; Encoding: GBK (Simplified Chinese)
+;; Note: Save this file in GBK encoding, do NOT use UTF-8
+;;
+;; IMPORTANT: This file only loads the framework and registers the
+;; ASTB_Init command. Run "ASTB_Init" in Allegro after startup to
+;; complete initialization (menu, commands, modules).
+;; ============================================================
+
+;; Set toolbox install directory
+ASTB_INSTALL_DIR = "D:/Cadence/MFLXskill"
+
+;; Add toolbox to SKILL path
+setSkillPath(cons(ASTB_INSTALL_DIR getSkillPath()))
+
+;; Load main framework (safe during allegro.ilinit)
+load(strcat(ASTB_INSTALL_DIR "/allegro_skill_toolbox/main.il"))
+
+;; Note: Do NOT call ASTB_Init here - AXL APIs are not ready during ilinit.
+;; After Allegro starts, type ASTB_Init in the command window.
