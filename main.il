@@ -18,6 +18,11 @@
 */
 
 ;;=========================================================================
+;; Global init flag - prevents double initialization
+;;=========================================================================
+defvar(ASTB_INITIALIZED nil)
+
+;;=========================================================================
 ;; Local helper: find last occurrence of a character in a string
 ;; Returns 1-based index or nil
 ;;=========================================================================
@@ -26,7 +31,7 @@ procedure( ASTB_LastIndexOf(str ch)
     len = strlen(str)
     i = len
     while( i >= 1
-      when( substring(str i i) == ch
+      when( substring(str i 1) == ch
         return(i)
       )
       i = i - 1
@@ -124,11 +129,11 @@ procedure( ASTB_InitEnv()
     
     ;; If still not found, abort with clear message
     unless( found
-      printf("[ASTB][ERROR] ÎÞ·¨¶¨Î» allegro_skill_toolbox °²×°Ä¿Â¼¡£\n")
-      printf("[ASTB][ERROR] ½â¾ö·½·¨\n")
-      printf("[ASTB][ERROR] 1. ÉèÖÃ ASTB_INSTALL_DIR ºóÖØÐÂ¼ÓÔØ£»\n")
-      printf("[ASTB][ERROR] 2. »ò½«°²×°Ä¿Â¼¼ÓÈë SKILL ËÑË÷Â·¾¶¡£\n")
-      printf("[ASTB][ERROR] Ê¾Àý£ºASTB_INSTALL_DIR = \"D:/Cadence/MFLXskill\"\n")
+      printf("[ASTB][ERROR] ï¿½Þ·ï¿½ï¿½ï¿½Î» allegro_skill_toolbox ï¿½ï¿½×°Ä¿Â¼ï¿½ï¿½\n")
+      printf("[ASTB][ERROR] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n")
+      printf("[ASTB][ERROR] 1. ï¿½ï¿½ï¿½ï¿½ ASTB_INSTALL_DIR ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½Ø£ï¿½\n")
+      printf("[ASTB][ERROR] 2. ï¿½ò½«°ï¿½×°Ä¿Â¼ï¿½ï¿½ï¿½ï¿½ SKILL ï¿½ï¿½ï¿½ï¿½Â·ï¿½ï¿½ï¿½ï¿½\n")
+      printf("[ASTB][ERROR] Ê¾ï¿½ï¿½ï¿½ï¿½ASTB_INSTALL_DIR = \"D:/Cadence/MFLXskill\"\n")
       error("Cannot locate allegro_skill_toolbox installation directory")
     )
     
@@ -160,7 +165,7 @@ procedure( ASTB_InitEnv()
 procedure( ASTB_About()
   prog((msg)
     msg = strcat("allegro_skill_toolbox v1.0\n"
-                 "Allegro PCB SKILL ²å¼þ¼¯\n\n"
+                 "Allegro PCB SKILL ï¿½ï¿½ï¿½ï¿½ï¿½\n\n"
                  "Path: " ASTB_GLOBAL->ToolboxPath "\n")
     axlUIConfirm(msg)
     return(t)
@@ -173,7 +178,7 @@ procedure( ASTB_Reload()
     ASTB_LoadModules()
     ASTB_RegisterAllMenuCommands()
     ASTB_InjectMenu()
-    axlUIConfirm("allegro_skill_toolbox ÒÑÖØÐÂ¼ÓÔØ¡£")
+    axlUIConfirm("allegro_skill_toolbox ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½Ø¡ï¿½")
     return(t)
   )
 )
@@ -181,8 +186,13 @@ procedure( ASTB_Reload()
 ;;=========================================================================
 ;; 3. Master Init - called after Allegro is fully ready
 ;;=========================================================================
-procedure( ASTB_Init()
+procedure( ASTB_Init(@optional window timerId elapsedTime)
   prog((tid)
+    when( ASTB_INITIALIZED
+      return(t)
+    )
+    ;; Mark as initialized immediately to prevent re-entrant timer calls.
+    ASTB_INITIALIZED = t
     errset(deleteFile("D:/Cadence/MFLXskill/astb_debug.log") t)
     ASTB_DebugLog("ASTB_Init: start")
     ASTB_InitEnv()
@@ -208,10 +218,38 @@ procedure( ASTB_Init()
     
     printf("[ASTB] allegro_skill_toolbox initialized successfully.\n")
     ASTB_DebugLog("ASTB_Init: success")
+    ;; Stop the auto-init timer if this call came from it.
+    when( timerId
+      errset(axlUIWTimerRemove(timerId) t)
+    )
   )
 )
 
 ;;=========================================================================
-;; 4. Register init command (safe during allegro.ilinit)
+;; 4. Auto-init after Allegro UI is ready
+;;=========================================================================
+procedure( ASTB_AutoInit()
+  prog((tid ret)
+    when( ASTB_INITIALIZED
+      return(t)
+    )
+    ret = errset(tid = axlUIWTimerAdd(nil 1000 nil 'ASTB_Init) t)
+    if( ret && tid
+    then
+      ASTB_DebugLog("ASTB_AutoInit: scheduled ASTB_Init via timer")
+    else
+      ASTB_DebugLog("ASTB_AutoInit: could not schedule timer (AXL not ready), use manual ASTB_Init")
+    )
+    t
+  )
+)
+
+;;=========================================================================
+;; 5. Register init command (safe during allegro.ilinit)
 ;;=========================================================================
 axlCmdRegister("ASTB_Init" 'ASTB_Init ?cmdType "general")
+
+;; Try to auto-run initialization once the GUI is ready.
+;; In some Allegro builds AXL timers are not available during ilinit; if so,
+;; fall back to typing ASTB_Init in the command window.
+ASTB_AutoInit()

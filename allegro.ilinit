@@ -4,9 +4,9 @@
 ;; Encoding: GBK (Simplified Chinese)
 ;; Note: Save this file in GBK encoding, do NOT use UTF-8
 ;;
-;; IMPORTANT: This file only loads the framework and registers the
-;; ASTB_Init command. Run "ASTB_Init" in Allegro after startup to
-;; complete initialization (menu, commands, modules).
+;; IMPORTANT: This file only loads the framework. main.il will try to
+;; auto-run ASTB_Init once the Allegro GUI is ready. If auto-init fails
+;; in your Allegro build, run "ASTB_Init" manually in the command window.
 ;; ============================================================
 
 ;; Set toolbox install directory
@@ -19,4 +19,4 @@ setSkillPath(cons(ASTB_INSTALL_DIR getSkillPath()))
 load(strcat(ASTB_INSTALL_DIR "/allegro_skill_toolbox/main.il"))
 
 ;; Note: Do NOT call ASTB_Init here - AXL APIs are not ready during ilinit.
-;; After Allegro starts, type ASTB_Init in the command window.
+;; main.il schedules ASTB_Init via axlUIWTimerAdd after the GUI is ready.

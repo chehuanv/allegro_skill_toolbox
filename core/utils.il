@@ -21,26 +21,26 @@ procedure( ASTB_StringTrim(str)
     end = len
     
     when( start < len
-      ch = substring(str start + 1 start + 1)
+      ch = substring(str start + 1 1)
       while( and(start < len or(ch == " " ch == "\t" ch == "\n" ch == "\r"))
         start = start + 1
         when( start < len
-          ch = substring(str start + 1 start + 1)
+          ch = substring(str start + 1 1)
         )
       )
     )
     
     when( end > start
-      ch = substring(str end end)
+      ch = substring(str end 1)
       while( and(end > start or(ch == " " ch == "\t" ch == "\n" ch == "\r"))
         end = end - 1
         when( end > start
-          ch = substring(str end end)
+          ch = substring(str end 1)
         )
       )
     )
     
-    return(substring(str start + 1 end))
+    return(substring(str start + 1 end - start))
   )
 )
 
@@ -53,7 +53,7 @@ procedure( ASTB_StringSplit(str sep)
     pos = 0
     token = ""
     while( pos < len
-      ch = substring(str pos + 1 pos + 1)
+      ch = substring(str pos + 1 1)
       if( ch == sep
       then
         result = cons(ASTB_StringTrim(token) result)
@@ -163,11 +163,11 @@ procedure( ASTB_MsgBox(msg)
 )
 
 procedure( ASTB_MsgWarn(msg)
-  axlUIConfirm(strcat("¾¯¸æ:\n" msg))
+  axlUIConfirm(strcat("ï¿½ï¿½ï¿½ï¿½:\n" msg))
 )
 
 procedure( ASTB_MsgError(msg)
-  axlUIConfirm(strcat("´íÎó:\n" msg))
+  axlUIConfirm(strcat("ï¿½ï¿½ï¿½ï¿½:\n" msg))
 )
 
 ;;=========================================================================
@@ -235,7 +235,7 @@ procedure( ASTB_FindFirst(lst pred)
 procedure( ASTB_ParseCfgLine(line)
   prog((trimmed pos key value len i)
     trimmed = ASTB_StringTrim(line)
-    when( or(null(trimmed) substring(trimmed 1 1) == "#")
+    when( or(null(trimmed) eq(trimmed "") substring(trimmed 1 1) == "#")
       return(nil)
     )
     ;; Find position of '=' (1-based index)
@@ -243,11 +243,13 @@ procedure( ASTB_ParseCfgLine(line)
     len = strlen(trimmed)
     i = 1
     while( i <= len
-      when( substring(trimmed i i) == "="
-        pos = i
-        i = len + 1  ;; break
+      prog(()
+        when( strcmp(substring(trimmed i 1) "=") == 0
+          pos = i
+          i = len + 1  ;; break
+        )
+        i = i + 1
       )
-      i = i + 1
     )
     when( pos && pos > 0
       key = ASTB_StringTrim(substring(trimmed 1 pos - 1))

@@ -14,19 +14,31 @@
 ;;=========================================================================
 ;; Global config table and key list
 ;;=========================================================================
-when( boundp('ASTB_CONFIG)
-  ASTB_CONFIG = makeTable('ASTB_CONFIG)
-)
-
+;; Only create the table once. Reloading this file must NOT wipe existing config,
+;; otherwise values set earlier in the session disappear while ASTB_CONFIG_KEYS persists.
 defvar(ASTB_CONFIG makeTable('ASTB_CONFIG))
 
 defvar(ASTB_CONFIG_KEYS nil)
 
 ;;=========================================================================
+;; Check if a string is in a list of strings (member may use eq for strings)
+;;=========================================================================
+procedure( ASTB_StringInList(str lst)
+  prog((item)
+    foreach( item lst
+      when( item == str
+        return(t)
+      )
+    )
+    nil
+  )
+)
+
+;;=========================================================================
 ;; Check if a config key exists (using tracked key list)
 ;;=========================================================================
 procedure( ASTB_TableHasKey(table key)
-  member(key ASTB_CONFIG_KEYS)
+  ASTB_StringInList(key ASTB_CONFIG_KEYS)
 )
 
 ;;=========================================================================
@@ -42,6 +54,7 @@ procedure( ASTB_ConfigFile()
 procedure( ASTB_LoadConfig()
   prog((cfgFile port line kv)
     cfgFile = ASTB_ConfigFile()
+    ASTB_LogInfo(sprintf(nil "ASTB_LoadConfig: file=%s exists=%L" cfgFile isFile(cfgFile)))
     unless( isFile(cfgFile)
       ASTB_LogInfo("Config file not found, using defaults.")
       return(nil)
@@ -54,6 +67,7 @@ procedure( ASTB_LoadConfig()
     while( gets(line port)
       kv = ASTB_ParseCfgLine(line)
       when( kv
+        ASTB_DebugLog(sprintf(nil "ASTB_LoadConfig: parsed key=%L value=%L" car(kv) cadr(kv)))
         ASTB_SetConfig(car(kv) cadr(kv))
       )
     )
@@ -88,12 +102,18 @@ procedure( ASTB_SaveConfig()
 ;; Get a config value with default
 ;;=========================================================================
 procedure( ASTB_GetConfig(key defaultVal)
-  prog((val)
+  prog((val hasKey)
+    hasKey = ASTB_TableHasKey(ASTB_CONFIG key)
     val = defaultVal
-    when( ASTB_TableHasKey(ASTB_CONFIG key)
+    when( hasKey
       val = ASTB_CONFIG[key]
     )
-    val
+    ;; Guard against ever returning an unbound value, which callers format as nil.
+    when( eq(val 'unbound)
+      val = defaultVal
+    )
+    ASTB_DebugLog(sprintf(nil "ASTB_GetConfig: key=%L hasKey=%L value=%L" key hasKey val))
+    return(val)
   )
 )
 
@@ -104,10 +124,11 @@ procedure( ASTB_SetConfig(key value)
   prog((s)
     s = if( stringp(value) value sprintf(nil "%s" value) )
     ASTB_CONFIG[key] = s
-    unless( member(key ASTB_CONFIG_KEYS)
+    unless( ASTB_StringInList(key ASTB_CONFIG_KEYS)
       ASTB_CONFIG_KEYS = cons(key ASTB_CONFIG_KEYS)
     )
-    s
+    ASTB_DebugLog(sprintf(nil "ASTB_SetConfig: key=%L value=%L keys=%L" key s ASTB_CONFIG_KEYS))
+    return(s)
   )
 )
 

@@ -107,8 +107,10 @@ procedure( ASTB_GetMenuStructure()
 procedure( ASTB_IsLanguageEnglish()
   prog((lang)
     lang = ASTB_GetConfig("language" "zh")
-    when( null(lang)  lang = "zh" )
-    return( lang == "en" || lang == "en-US" || lang == "english" )
+    when( or(null(lang) eq(lang 'unbound))
+      lang = "zh"
+    )
+    return( lang == "en" || lang == "en-US" || lang == "english" || lang == "en-us" )
   )
 )
 
@@ -218,6 +220,7 @@ procedure( ASTB_MenuAlreadyInjected()
 ;;=========================================================================
 procedure( ASTB_InjectMenu()
   prog((menuList stack parentId item ret label cmd subId firstPopup enKey)
+    ASTB_LogInfo(sprintf(nil "ASTB_InjectMenu: language=%L isEnglish=%L" ASTB_GetConfig("language" "<unset>") ASTB_IsLanguageEnglish()))
     when( ASTB_MenuAlreadyInjected()
       ASTB_LogInfo("Menu already injected, skipping.")
       return(t)
@@ -302,53 +305,13 @@ procedure( ASTB_InjectMenu()
 ;; Apply current language to already injected menu
 ;;=========================================================================
 procedure( ASTB_ApplyMenuLanguage()
-  prog((menuList item id label enKey cmd ret changed failed)
-    changed = 0
-    failed = 0
-    menuList = ASTB_GetMenuStructure()
-    foreach( item menuList
-      when( ASTB_MenuIsPopup(item)
-        enKey = cadr(item)
-        label = ASTB_MenuGetPopupLabel(item)
-        id = ASTB_MENU_IDS[enKey]
-        unless( id
-          ASTB_DebugLog(strcat("ASTB_ApplyMenuLanguage: popup ID not found for " enKey))
-          failed = failed + 1
-        )
-        when( id
-          ret = errset(axlUIMenuChange(id 'display label) t)
-          if( ret
-          then
-            changed = changed + 1
-          else
-            ASTB_DebugLog(strcat("ASTB_ApplyMenuLanguage: failed to change popup " enKey " to " label))
-            failed = failed + 1
-          )
-        )
-      )
-      when( ASTB_MenuIsCommand(item)
-        cmd = ASTB_MenuGetCommand(item)
-        label = ASTB_MenuGetCommandLabel(item)
-        id = ASTB_MENU_IDS[cmd]
-        unless( id
-          ASTB_DebugLog(strcat("ASTB_ApplyMenuLanguage: command ID not found for " cmd))
-          failed = failed + 1
-        )
-        when( id
-          ret = errset(axlUIMenuChange(id 'display label) t)
-          if( ret
-          then
-            changed = changed + 1
-          else
-            ASTB_DebugLog(strcat("ASTB_ApplyMenuLanguage: failed to change command " cmd " to " label))
-            failed = failed + 1
-          )
-        )
-      )
-    )
-    ;; Force UI refresh after changing labels
-    errset(axlUIWUpdate(nil) t)
-    ASTB_LogInfo(sprintf(nil "Menu language applied: %s (changed=%d failed=%d)" if(ASTB_IsLanguageEnglish() then "en" else "zh") changed failed))
+  prog((langStr)
+    ;; Allegro 17.4/24.1 cannot reliably refresh already-displayed injected menus.
+    ;; axlUIMenuChange reports success but does not update the visible labels,
+    ;; and axlUIMenuDelete cannot remove an injected popup.  The only robust
+    ;; way to apply a new language is to restart Allegro.
+    langStr = if(ASTB_IsLanguageEnglish() then "English" else "Chinese")
+    ASTB_LogInfo(sprintf(nil "Menu language is set to %s; please restart Allegro to apply." langStr))
   )
 )
 
@@ -356,15 +319,26 @@ procedure( ASTB_ApplyMenuLanguage()
 ;; Set menu language and update displayed labels
 ;;=========================================================================
 procedure( ASTB_SetLanguage(lang)
-  prog((oldLang)
+  prog((oldLang cfgVal isEn msg)
     oldLang = ASTB_GetConfig("language" "zh")
+    ASTB_LogInfo(sprintf(nil "SetLanguage: oldLang=%L lang=%L" oldLang lang))
+    when( or(null(oldLang) eq(oldLang 'unbound))
+      oldLang = "zh"
+    )
     when( oldLang == lang
+      axlUIConfirm(sprintf(nil "Language already set to %s" lang))
       return(t)
     )
     ASTB_SetConfig("language" lang)
     ASTB_SaveConfig()
+    cfgVal = ASTB_GetConfig("language" "zh")
+    ASTB_LogInfo(sprintf(nil "SetLanguage: saved value=%L" cfgVal))
     ASTB_ApplyMenuLanguage()
-    axlUIConfirm(sprintf(nil "Language switched to %s" lang))
+    isEn = ASTB_IsLanguageEnglish()
+    msg = if(isEn
+           then "Language switched to English.\nPlease restart Allegro to apply."
+           else "语言切换为中文。\n请重启 Allegro 生效。")
+    axlUIConfirm(msg)
     return(t)
   )
 )
